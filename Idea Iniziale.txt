@@ -1,0 +1,5 @@
+il progetto deve avere un train che riconosce un immgine, fa vedere le epoche.
+idea (riconosce quale animale è e te lo scrive).
+
+si mettono un terzo di immagini normali ed un terzo modificate da me,
+cosi faccio vedere anche come modificare i vari valori etc..
