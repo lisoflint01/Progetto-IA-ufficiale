@@ -8,6 +8,9 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter 
 
+SRC = 'C:\Users\liso4\miniconda3\IA\Progetto2\dataset\train'
+RATIO = 0.25
+SEED = 42
 IMG_EXTS = {'.jpg','.jpeg','.png','.bmp','.tif','.tiff'}
 
 # check if photo is in correct format
@@ -33,4 +36,35 @@ def save_jpg(img, path):
     img.save(path, format="JPEG", quality = 95, optimize = True)
 
 
-    
+# Rotazione moderata ±12°
+def rotate_moderate(img):
+    img = uniform_rgb(img)
+    angle = random.uniform(-12, 12)
+    return img.rotate(angle, resample=Image.BICUBIC, expand=True)
+
+# Flip orizzontale
+def flip_horizontal(img):
+    img = uniform_rgb(img)
+    return img.transpose(Image.FLIP_LEFT_RIGHT)
+
+# Luminosità ±25%
+def adjust_brightness(img):
+    img = uniform_rgb(img)
+    factor = random.uniform(0.75, 1.25)
+    return ImageEnhance.Brightness(img).enhance(factor)
+
+# Blur leggero
+def blur_light(img):
+    img = uniform_rgb(img)
+    blur = random.uniform(0.4, 1.2)
+    return img.filter(ImageFilter.GaussianBlur(blur))
+
+# Rumore gaussiano basso
+def add_noise(img):
+    img = uniform_rgb(img)
+    arr_img = np.array(img).astype(np.float32)
+    arr_rum = np.random.normal(0, 8.0, size = arr_img.shape)
+    arr_sum = arr_img + arr_rum
+    arr = np.clip(arr_sum, 0, 255).astype(np.uint8)
+    return Image.fromarray(arr)
+
