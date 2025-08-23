@@ -8,9 +8,6 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter 
 
-SRC = 'C:\Users\liso4\miniconda3\IA\Progetto2\dataset\train'
-RATIO = 0.25
-SEED = 42
 IMG_EXTS = {'.jpg','.jpeg','.png','.bmp','.tif','.tiff'}
 
 # check if photo is in correct format
