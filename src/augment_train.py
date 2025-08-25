@@ -65,3 +65,60 @@ def add_noise(img):
     arr = np.clip(arr_sum, 0, 255).astype(np.uint8)
     return Image.fromarray(arr)
 
+#list of trasformation
+TRANSFORMS = [rotate_moderate, flip_horizontal, adjust_brightness, blur_light, add_noise]
+
+
+'''
+
+
+
+Attenzione Rileggere da QUI
+
+
+
+
+
+'''
+
+def list_images(class_dir):
+    return [p for p in class_dir.iterdir() if p.is_file() and is_image(p)]
+
+def count_real_images(class_dir):
+    images = list_images(class_dir)
+    real_images = [f for f in images if "_aug_" not in f.stem]
+    return len(real_images)
+
+def pick_n_transforms():
+    k = random.randint(1, 3)
+    return random.sample(TRANSFORMS, k)
+
+def compute_s(R: int, ratio: float):
+    return round((ratio / (1 - ratio)) * R)
+
+def synthesize_images_inplace(class_dir: Path, S: int, seed: int = 42):
+    random.seed(seed)
+    np.random.seed(seed)
+
+    real_imgs = [f for f in list_images(class_dir) if "_aug_" not in f.stem]
+
+    made = 0
+    for i in range(S):
+        try:
+            src = random.choice(real_imgs)  # spostato dentro il try
+            with Image.open(src) as im:
+                im = uniform_rgb(im)
+                for t in pick_n_transforms():
+                    im = t(im)
+                base = src.stem
+                fname = f"{base}_aug_{i:04d}.jpg"
+                save_jpg(im, class_dir / fname)
+                made += 1
+        except Exception:
+            continue
+    return made
+
+def augment_class_inplace(class_dir: Path, ratio: float = 0.25, seed: int = 42):
+    R = count_real_images(class_dir)
+    S = compute_s(R, ratio)
+    return synthesize_images_inplace(class_dir, S, seed=seed)
