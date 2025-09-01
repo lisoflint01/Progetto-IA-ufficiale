@@ -1,5 +1,6 @@
 {
-    "dataset" : "dataset",
+    "train_directory": "dataset/train",
+    "val_directory": "dataset/val",
     "img_size" : 224,
 
     "epochs" : 10,
