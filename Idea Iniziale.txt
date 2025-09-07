@@ -1,8 +1,0 @@
-il progetto deve avere un train che riconosce un immgine, fa vedere le epoche.
-idea (riconosce quale animale è e te lo scrive).
-
-si mettono un terzo di immagini normali ed un terzo modificate da me,
-cosi faccio vedere anche come modificare i vari valori etc..
-
-21 fare piano di 9 giorni
-consegnare al 9 su git hub e scrivere al professore

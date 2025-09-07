@@ -67,51 +67,55 @@ def mod_img_add_noise(img):
 #list of trasformation
 TRANSFORMS = [mod_img_rotate, mod_img_flip, mod_img_brightness, mod_img_blur, mod_img_add_noise]
 
-'''
-
-Attenzione Rileggere da QUI
-
-
-'''
-
+# return all real images in directory
 def list_images(class_dir: Path, only_real: bool = False):
     imgs = [p for p in class_dir.iterdir() if p.is_file() and is_image(p)]
     if only_real:
         imgs = [p for p in imgs if "_aug_" not in p.stem]
     return imgs
 
+# count real images
 def count_real_images(class_dir: Path) -> int:
     return len(list_images(class_dir, only_real=True))
 
+# number of synthetic images
 def compute_s(R: int, ratio: float):
     return round((ratio / (1 - ratio)) * R)
 
+# generate S sintetic image
 def synthesize_images_inplace(class_dir: Path, S: int, seed: int = 42):
     random.seed(seed)
     np.random.seed(seed)
 
-    # usa direttamente le reali
+    # list real images
     real_imgs = list_images(class_dir, only_real=True)
 
-    made = 0
+    counter_image_generated  = 0
     for i in range(S):
         try:
+            # select real image
             src = random.choice(real_imgs)
-            with Image.open(src) as im:
-                im = to_rgb(im)
+            with Image.open(src) as image:
+                image = to_rgb(image)
+              
+                num_transformations = random.randint(1, min(3, len(TRANSFORMS)))
                 
-                # inline "pick n transforms": tra 1 e 3, limitato alla lunghezza di TRANSFORMS
-                k = random.randint(1, min(3, len(TRANSFORMS)))
-                for t in random.sample(TRANSFORMS, k):
-                    im = t(im)
-                fname = f"{src.stem}_aug_{i:04d}.jpg"
-                save_jpg(im, class_dir / fname)
-                made += 1
+                # apply trasformation
+                for transform in random.sample(TRANSFORMS, num_transformations):
+                    image = transform(image)
+                    
+                # save img 
+                img_name = f"{src.stem}_aug_{i:04d}.jpg"
+                save_jpg(image, class_dir / img_name)
+                counter_image_generated  += 1
+                
         except Exception:
             continue
-    return made
+        
+    return counter_image_generated 
 
+# start generate synthetic images
 def augment_class_inplace(class_dir: Path, ratio: float = 0.25, seed: int = 42):
-    R = count_real_images(class_dir)
-    S = compute_s(R, ratio)
-    return synthesize_images_inplace(class_dir, S, seed=seed)
+    n_real = count_real_images(class_dir)
+    calc_n_fake = compute_s(n_real, ratio)
+    return synthesize_images_inplace(class_dir, calc_n_fake, seed=seed)

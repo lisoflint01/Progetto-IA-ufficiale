@@ -6,9 +6,10 @@ import json
 from pathlib import Path
 from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
+import torch.nn as nn
 from torchvision import models
 
-        
+# set device and get it
 def pick_device(mode: str):
     cuda_activable = torch.cuda.is_available()
     mode = mode.lower()
@@ -24,22 +25,25 @@ def pick_device(mode: str):
         print("[device] using cpu (default)")
         return torch.device("cpu")    
 
+# set seed for random
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    
+   
+# apply standard to image 
 def apply_transforms(img, img_size):
-    # ridimensiona
+    
+    # resize
     resize = transforms.Resize((img_size, img_size))
     img = resize(img)
 
-    # converti in tensore
+    # to tensor
     to_tensor = transforms.ToTensor()
     img = to_tensor(img)
 
-    # normalizza
+    # normalize
     normalize = transforms.Normalize(
         mean=[0.5, 0.5, 0.5],
         std=[0.5, 0.5, 0.5]
@@ -48,12 +52,13 @@ def apply_transforms(img, img_size):
 
     return img
 
+# prepare dataset path, directory,
 def prepare_dataset(train_dir, val_dir, batch_size, img_size, out_dir):
-    # percorsi
+    
+    # path
     path_train = Path(train_dir)
     path_val   = Path(val_dir)
 
-    
     if not path_train.is_dir():
         raise FileNotFoundError(f"Cartella train mancante: {path_train}")
     if not path_val.is_dir():
@@ -63,7 +68,7 @@ def prepare_dataset(train_dir, val_dir, batch_size, img_size, out_dir):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents = True, exist_ok = True)
 
-    # trasformazioni (augmentation già offline)
+    # trasforms
     to_tf = lambda img: apply_transforms(img, img_size)
 
     # dataset & loader
@@ -82,10 +87,14 @@ def prepare_dataset(train_dir, val_dir, batch_size, img_size, out_dir):
     classes = train_ds.classes
     return train_loader, val_loader, classes
 
+# build backbone, replace head, optional freeze
 def build_model(num_classes, freeze_backbone):
+    
+    # load backbone, get input size
     saved_backbone = models.resnet18(pretrained=True)
     num_features = saved_backbone.fc.in_features
     
+    # new head
     new_head = nn.Sequential(
         nn.Linear(num_features, 512),
         nn.ReLU(),
@@ -93,23 +102,29 @@ def build_model(num_classes, freeze_backbone):
         nn.Linear(512, num_classes)
     )
     
+    # swap in new head
     saved_backbone.fc = new_head
     
+    # freeze backbone, train only head
     if freeze_backbone is True:
         for param in saved_backbone.parameters():
             param.requires_grad = False
         for param in saved_backbone.fc.parameters(): 
             param.requires_grad = True
             
+    # total/trainable parameter summary
     total_params = sum(p.numel() for p in saved_backbone.parameters())
     trainable_params = sum(p.numel() for p in saved_backbone.parameters() if p.requires_grad)
     print(f"[params] total: {total_params:,} | trainable: {trainable_params:,}")
+    
     return saved_backbone
 
+# train e val, save checkpoints
 def train (model, train_loader, val_loader, num_epochs, device, lr):
-    model = model.to(device)
+    model = model.to(device)    # move model to device
     loss_function = torch.nn.CrossEntropyLoss()
     
+    # optimize only params trainable
     optimizer = torch.optim.Adam(
         [p for p in model.parameters() if p.requires_grad],
         lr=lr
@@ -117,6 +132,7 @@ def train (model, train_loader, val_loader, num_epochs, device, lr):
     
     history = {"train_loss": [], "val_loss": [], "val_accuracy": []}
 
+    # training loop, validation, checkpoints
     for epoch in range(num_epochs):
         print(f"\n[epoch {epoch+1}/{num_epochs}]")
         model.train()
@@ -171,17 +187,9 @@ def train (model, train_loader, val_loader, num_epochs, device, lr):
 
         print(f"[epoch {epoch+1}/{num_epochs}] \t train loss: {epoch_train_loss:.4f} \t val loss: {val_loss:.4f} \t val acc: {val_accuracy:.2%}")
 
-
         # Save best model
         if epoch == 0 or val_accuracy > max(history["val_accuracy"][:-1]):
             torch.save(model.state_dict(), "artifacts/model_best.pt")
 
         # Save last model (sempre)
         torch.save(model.state_dict(), "artifacts/model_last.pt")
-'''
-
-
-
-
-     
-'''

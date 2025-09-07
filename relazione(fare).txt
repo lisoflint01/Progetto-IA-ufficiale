@@ -1,0 +1,13 @@
+Relazione 
+
+Punto 7
+andare a spiegare i test
+
+
+est_pick_device: verifica che ritorni ``cpu oppure cuda. Serve per assicurarsi che la scelta automatica del dispositivo funzioni correttamente.
+
+test_set_seed: verifica se impostando lo stesso seed due volte, generando due numeri casuali identici venisse un risultato identico. Serve a garantire la riproducibilità, cioè avere stessi risultati a parità di condizioni.
+
+test_prepare_dataset: crea una scala del mio dataset originale genera e richiama prepare_dataset(...). Controlla che le classi lette siano corrette. Serve a validare caricamento, trasformazioni base e salvataggio di labels.json.
+
+test_build_model: costruisce il modello con num_classes=2 e verifica che l’ultimo livello abbia 2 uscite. Serve a confermare che la testa del modello venga dimensionata correttamente in base al numero di classi.
